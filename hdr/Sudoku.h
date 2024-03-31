@@ -7,18 +7,24 @@
 
 #include <map>
 #include <memory>
+#include "algorithm/SudokuFieldSorter.h"
+
 
 namespace sudoku {
 
     class SudokuField;
     class SudokuFieldGroup;
 
+    namespace algorithm {
+        class SudokuFieldSorter;
+    }
+
     class Sudoku {
         friend void initialize_sudoku_field_group(unsigned short, unsigned short, unsigned short, Sudoku &, SudokuField*);
 
     private:
         unsigned short const m_size;
-        std::map<unsigned int, sudoku::SudokuField*> m_fields;
+        algorithm::SudokuFieldSorter m_sorter;
         std::map<unsigned short, SudokuFieldGroup> m_row_sudoku_field_groups;
         std::map<unsigned short, SudokuFieldGroup> m_column_sudoku_field_groups;
         std::map<unsigned short, SudokuFieldGroup> m_box_sudoku_field_groups;
@@ -35,14 +41,13 @@ namespace sudoku {
         Sudoku& operator=(Sudoku &&) = delete;
 
         [[nodiscard]] unsigned short size() const noexcept;
-        [[nodiscard]] std::map<unsigned int, sudoku::SudokuField*>::const_iterator begin() const noexcept;
-        [[nodiscard]] std::map<unsigned int, sudoku::SudokuField*>::const_iterator end() const noexcept;
+        void for_each_sudoku_field_ptr(std::function<void(SudokuField*)> const &);
     };
 
     void initialize_sudoku_field_group(unsigned short, unsigned short, unsigned short, Sudoku &, SudokuField*);
 
 } // sudoku
 
-std::ostream& operator<<(std::ostream&, sudoku::Sudoku const &);
+std::ostream& operator<<(std::ostream&, sudoku::Sudoku &);
 
 #endif //SUDOKU_SOLVER_SUDOKU_H

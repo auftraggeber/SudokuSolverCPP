@@ -4,6 +4,7 @@
 
 #include "../hdr/Sudoku.h"
 #include "../hdr/SudokuField.h"
+#include "../hdr/algorithm/SudokuFieldSorter.h"
 #include <iostream>
 
 sudoku::Sudoku::Sudoku(unsigned short size) noexcept: m_size{size} {
@@ -22,16 +23,20 @@ sudoku::Sudoku::Sudoku(unsigned short size) noexcept: m_size{size} {
 }
 
 sudoku::Sudoku::~Sudoku() {
-    std::for_each(m_fields.begin(), m_fields.end(), [](auto pair){
-        delete pair.second;
-    });
+    while (m_sorter.begin() != m_sorter.end()) {
+        SudokuField* sudoku_field_ptr = m_sorter.begin().operator[](0);
+        m_sorter.remove_sudoku_field(sudoku_field_ptr);
+        delete sudoku_field_ptr;
+    }
 }
 
 void sudoku::Sudoku::add_sudoku_field(sudoku::SudokuField *sudoku_field_ptr) noexcept {
-    if (m_fields.contains(sudoku_field_ptr->id())) {
-        delete m_fields[sudoku_field_ptr->id()];
+    SudokuField* old_sudoku_field_ptr{m_sorter[sudoku_field_ptr->id()]};
+    if (old_sudoku_field_ptr != nullptr) {
+        m_sorter.remove_sudoku_field(old_sudoku_field_ptr);
+        delete old_sudoku_field_ptr;
     }
-    m_fields.insert(std::make_pair(sudoku_field_ptr->id(), sudoku_field_ptr));
+    m_sorter.add_sudoku_field(sudoku_field_ptr);
 }
 
 unsigned short sudoku::Sudoku::size() const noexcept { return m_size; }
@@ -50,22 +55,25 @@ void sudoku::initialize_sudoku_field_group(unsigned short row, unsigned short co
     init(sudoku.m_box_sudoku_field_groups[box]);
 }
 
-std::map<unsigned int, sudoku::SudokuField *>::const_iterator sudoku::Sudoku::begin() const noexcept{ return m_fields.begin(); }
+void sudoku::Sudoku::for_each_sudoku_field_ptr(const std::function<void(SudokuField *)> &fnc) {
+    std::for_each(m_sorter.begin(), m_sorter.end(), [&fnc](SudokuField* sudoku_field_ptr) {
+        fnc(sudoku_field_ptr);
+    });
+}
 
-std::map<unsigned int, sudoku::SudokuField *>::const_iterator sudoku::Sudoku::end() const noexcept { return m_fields.end(); }
-
-std::ostream& operator<<(std::ostream& ostream, sudoku::Sudoku const &sudoku) {
+std::ostream& operator<<(std::ostream& ostream, sudoku::Sudoku &sudoku) {
     ostream << "Sudoku with size: " << sudoku.size() << std::endl;
 
-    std::for_each(sudoku.begin(), sudoku.end(), [&](auto const &pair) {
+
+    sudoku.for_each_sudoku_field_ptr([&ostream, &sudoku](sudoku::SudokuField* sudoku_field_ptr) {
         std::string begin{" "};
-        bool const column_line{pair.first % static_cast<unsigned short>(std::sqrt(sudoku.size())) == 0};
-        bool const row_line{pair.first != 0 && (pair.first / sudoku.size()) % static_cast<unsigned short>(std::sqrt(sudoku.size())) == 0};
+        auto const sudoku_field_id = sudoku_field_ptr->id();
+        bool const column_line{sudoku_field_id % static_cast<unsigned short>(std::sqrt(sudoku.size())) == 0};
+        bool const row_line{sudoku_field_id!= 0 && (sudoku_field_id / sudoku.size()) % static_cast<unsigned short>(std::sqrt(sudoku.size())) == 0};
         std::string out{"_"};
-        sudoku::SudokuField* sudoku_field_ptr{pair.second};
 
         /* set format and lines */
-        if (pair.first % sudoku.size() == 0) {
+        if (sudoku_field_id % sudoku.size() == 0) {
             ostream << std::endl;
 
             if (row_line) {
@@ -100,6 +108,7 @@ std::ostream& operator<<(std::ostream& ostream, sudoku::Sudoku const &sudoku) {
         /* print value */
         ostream << begin << out << " ";
     });
+
 
     return ostream;
 }

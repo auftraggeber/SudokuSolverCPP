@@ -6,8 +6,6 @@
 #define SUDOKU_SOLVER_SOLVINGOPERATION_H
 
 #include <memory>
-#include "../SudokuField.h"
-#include "../Sudoku.h"
 
 namespace sudoku{
     class Sudoku;
