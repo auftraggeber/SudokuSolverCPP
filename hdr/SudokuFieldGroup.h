@@ -22,11 +22,8 @@ namespace sudoku {
 
         SudokuField* operator[](unsigned int) const;
 
-        void add_number_option(unsigned short) const noexcept;
-        void remove_number_option(unsigned short) const noexcept;
-
-        std::vector<SudokuField*>::iterator begin() noexcept;
-        std::vector<SudokuField*>::iterator end() noexcept;
+        std::vector<SudokuField*>::const_iterator begin() const noexcept;
+        std::vector<SudokuField*>::const_iterator end() const noexcept;
     };
 
 } // sudoku

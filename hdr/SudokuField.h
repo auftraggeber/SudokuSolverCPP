@@ -22,11 +22,10 @@ namespace sudoku {
         unsigned const int m_id;
         std::vector<unsigned short> m_options;
         unsigned short m_value{0};
-        SudokuFieldGroup m_group;
         std::array<SudokuFieldGroup, 3> m_sudoku_field_groups;
 
     public:
-        explicit SudokuField(unsigned int) noexcept;
+        explicit SudokuField(unsigned int, unsigned short) noexcept;
         SudokuField(SudokuField const &) = delete;
         SudokuField(SudokuField &&) = delete;
 
@@ -44,6 +43,8 @@ namespace sudoku {
         [[nodiscard]] unsigned int id() const noexcept;
         [[nodiscard]] unsigned short option_count() const noexcept;
         [[nodiscard]] unsigned short value() const;
+        [[nodiscard]] std::array<SudokuFieldGroup, 3>::const_iterator begin() const noexcept;
+        [[nodiscard]] std::array<SudokuFieldGroup, 3>::const_iterator end() const noexcept;
 
     };
 

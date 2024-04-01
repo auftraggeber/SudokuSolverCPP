@@ -17,10 +17,12 @@ namespace sudoku {
 
     namespace algorithm {
         class SudokuFieldSorter;
+        class SolvingOperation;
     }
 
     class Sudoku {
         friend void initialize_sudoku_field_group(unsigned short, unsigned short, unsigned short, Sudoku &, SudokuField*);
+        friend class algorithm::SolvingOperation;
 
     private:
         unsigned short const m_size;
@@ -41,7 +43,8 @@ namespace sudoku {
         Sudoku& operator=(Sudoku &&) = delete;
 
         [[nodiscard]] unsigned short size() const noexcept;
-        void for_each_sudoku_field_ptr(std::function<void(SudokuField*)> const &);
+        [[nodiscard]] std::vector<SudokuField*>::const_iterator begin() const noexcept;
+        [[nodiscard]] std::vector<SudokuField*>::const_iterator end() const noexcept;
     };
 
     void initialize_sudoku_field_group(unsigned short, unsigned short, unsigned short, Sudoku &, SudokuField*);

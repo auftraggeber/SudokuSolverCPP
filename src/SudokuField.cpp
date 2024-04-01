@@ -5,7 +5,11 @@
 #include <iostream>
 #include "../hdr/SudokuField.h"
 
-sudoku::SudokuField::SudokuField(unsigned int id) noexcept: m_id{id} {}
+sudoku::SudokuField::SudokuField(unsigned int id, unsigned short max_no) noexcept: m_id{id} {
+    for (int i = 1; i <= max_no; ++i) {
+        m_options.push_back(i);
+    }
+}
 
 bool sudoku::SudokuField::operator==(const sudoku::SudokuField &other) const noexcept {
     return m_id == other.m_id;
@@ -23,6 +27,7 @@ void sudoku::SudokuField::set_value(unsigned short no) {
 }
 
 void sudoku::SudokuField::remove_value() noexcept {
+    auto const no{m_value};
     m_value = 0;
 }
 
@@ -60,5 +65,13 @@ unsigned short sudoku::SudokuField::value() const {
     }
 
     return m_value;
+}
+
+std::array<sudoku::SudokuFieldGroup, 3>::const_iterator sudoku::SudokuField::begin() const noexcept {
+    return m_sudoku_field_groups.begin();
+}
+
+std::array<sudoku::SudokuFieldGroup, 3>::const_iterator sudoku::SudokuField::end() const noexcept {
+    return m_sudoku_field_groups.end();
 }
 

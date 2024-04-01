@@ -15,7 +15,7 @@ sudoku::Sudoku::Sudoku(unsigned short size) noexcept: m_size{size} {
         auto const column = i % m_size;
         auto const box = column + (static_cast<unsigned short>(std::sqrt(m_size)) * row);
 
-        auto sudoku_field_ptr = new SudokuField{i};
+        auto sudoku_field_ptr = new SudokuField{i, m_size};
         add_sudoku_field(sudoku_field_ptr);
 
         initialize_sudoku_field_group(row, column, box, *this, sudoku_field_ptr);
@@ -55,17 +55,19 @@ void sudoku::initialize_sudoku_field_group(unsigned short row, unsigned short co
     init(sudoku.m_box_sudoku_field_groups[box]);
 }
 
-void sudoku::Sudoku::for_each_sudoku_field_ptr(const std::function<void(SudokuField *)> &fnc) {
-    std::for_each(m_sorter.begin(), m_sorter.end(), [&fnc](SudokuField* sudoku_field_ptr) {
-        fnc(sudoku_field_ptr);
-    });
+std::vector<sudoku::SudokuField*>::const_iterator sudoku::Sudoku::begin() const noexcept {
+    return m_sorter.begin();
+}
+
+std::vector<sudoku::SudokuField*>::const_iterator sudoku::Sudoku::end() const noexcept {
+    return m_sorter.end();
 }
 
 std::ostream& operator<<(std::ostream& ostream, sudoku::Sudoku &sudoku) {
     ostream << "Sudoku with size: " << sudoku.size() << std::endl;
 
 
-    sudoku.for_each_sudoku_field_ptr([&ostream, &sudoku](sudoku::SudokuField* sudoku_field_ptr) {
+    std::for_each(sudoku.begin(), sudoku.end(), [&ostream, &sudoku](sudoku::SudokuField* sudoku_field_ptr) {
         std::string begin{" "};
         auto const sudoku_field_id = sudoku_field_ptr->id();
         bool const column_line{sudoku_field_id % static_cast<unsigned short>(std::sqrt(sudoku.size())) == 0};
