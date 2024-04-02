@@ -5,6 +5,7 @@
 #include "../../hdr/algorithm/SudokuFieldSorter.h"
 #include "../../hdr/SudokuField.h"
 #include <vector>
+#include <iostream>
 
 sudoku::SudokuField* sudoku::algorithm::SudokuFieldSorter::operator[](unsigned int const sudoku_field_id) {
     SudokuField* found_sudoku_field_ptr{nullptr};
@@ -24,6 +25,8 @@ bool sudoku::algorithm::SudokuFieldSorter::contains(sudoku::SudokuField* sudoku_
 }
 
 void sudoku::algorithm::SudokuFieldSorter::persist(sudoku::SudokuField* sudoku_field_ptr) {
+    if (sudoku_field_ptr->has_value()) return;
+
     auto const option_count = sudoku_field_ptr->option_count();
     m_id_map.insert(std::make_pair(sudoku_field_ptr->id(), option_count));
     m_map.insert(std::make_pair(option_count, sudoku_field_ptr));
@@ -50,7 +53,7 @@ void sudoku::algorithm::SudokuFieldSorter::update(sudoku::SudokuField* sudoku_fi
 
 void sudoku::algorithm::SudokuFieldSorter::flush() {
     std::erase_if(m_map, [this](auto const &pair) {
-        return *(pair.second) == *(m_update_cache[pair.second->id()]);
+        return m_update_cache.contains(pair.second->id());
     });
 
     std::for_each(m_update_cache.begin(), m_update_cache.end(), [this](auto const &pair) {
@@ -58,6 +61,14 @@ void sudoku::algorithm::SudokuFieldSorter::flush() {
     });
 
     m_update_cache.clear();
+}
+
+bool sudoku::algorithm::SudokuFieldSorter::no_fields_without_value() const noexcept {
+    return m_map.empty();
+}
+
+sudoku::SudokuField* sudoku::algorithm::SudokuFieldSorter::first() const noexcept {
+    return m_map.begin()->second;
 }
 
 std::vector<sudoku::SudokuField*>::const_iterator sudoku::algorithm::SudokuFieldSorter::begin() const noexcept {

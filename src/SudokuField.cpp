@@ -27,28 +27,39 @@ void sudoku::SudokuField::set_value(unsigned short no) {
 }
 
 void sudoku::SudokuField::remove_value() noexcept {
-    auto const no{m_value};
     m_value = 0;
 }
 
-void sudoku::SudokuField::remove_number_option(unsigned short no) noexcept {
+bool sudoku::SudokuField::remove_number_option(unsigned short no) noexcept {
+    if (has_value()) return false;
+
+    auto const size_before{m_options.size()};
+
     m_options.erase(
             std::remove_if(
                     m_options.begin(),
                     m_options.end(),
-                    [&no](unsigned int n){
+                    [&no](unsigned short n){
                         return no == n;
                     }),
             m_options.end());
+
+    return size_before > m_options.size();
 }
 
-void sudoku::SudokuField::add_number_option(unsigned short no) noexcept {
-    if (number_is_possible(no)) return; // already in vector
+bool sudoku::SudokuField::add_number_option(unsigned short no) noexcept {
+    if (has_number_option(no)) return false; // already in vector
+
+    auto const size_before{m_options.size()};
+
     m_options.push_back(no);
+    std::sort(m_options.begin(), m_options.end(), std::greater<>());
+
+    return size_before < m_options.size();
 }
 
-bool sudoku::SudokuField::number_is_possible(unsigned short no) const noexcept {
-    return !has_value() && std::find(m_options.begin(), m_options.end(), no) != m_options.end();
+bool sudoku::SudokuField::has_number_option(unsigned short no) const noexcept {
+    return std::find(m_options.begin(), m_options.end(), no) != m_options.end();
 }
 
 bool sudoku::SudokuField::has_value() const noexcept {
@@ -67,11 +78,11 @@ unsigned short sudoku::SudokuField::value() const {
     return m_value;
 }
 
-std::array<sudoku::SudokuFieldGroup, 3>::const_iterator sudoku::SudokuField::begin() const noexcept {
+std::array<sudoku::SudokuFieldGroup*, 3>::const_iterator sudoku::SudokuField::begin() const noexcept {
     return m_sudoku_field_groups.begin();
 }
 
-std::array<sudoku::SudokuFieldGroup, 3>::const_iterator sudoku::SudokuField::end() const noexcept {
+std::array<sudoku::SudokuFieldGroup*, 3>::const_iterator sudoku::SudokuField::end() const noexcept {
     return m_sudoku_field_groups.end();
 }
 

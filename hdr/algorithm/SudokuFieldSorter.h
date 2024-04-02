@@ -38,6 +38,8 @@ namespace sudoku::algorithm {
             void remove_sudoku_field(SudokuField*);
             void update(SudokuField*);
             void flush();
+            [[nodiscard]] bool no_fields_without_value() const noexcept;
+            [[nodiscard]] SudokuField* first() const noexcept;
             [[nodiscard]] std::vector<SudokuField*>::const_iterator begin() const noexcept;
             [[nodiscard]] std::vector<SudokuField*>::const_iterator end() const noexcept;
         };

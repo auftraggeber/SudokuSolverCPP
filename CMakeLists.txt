@@ -13,4 +13,6 @@ add_executable(sudoku_solver main.cpp
         src/SudokuFieldGroup.cpp
         hdr/SudokuFieldGroup.h
         src/algorithm/SudokuFieldSorter.cpp
-        hdr/algorithm/SudokuFieldSorter.h)
+        hdr/algorithm/SudokuFieldSorter.h
+        src/algorithm/SudokuFieldIterator.cpp
+        hdr/algorithm/SudokuFieldIterator.h)

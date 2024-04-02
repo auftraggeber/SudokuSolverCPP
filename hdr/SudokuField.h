@@ -15,14 +15,19 @@ namespace sudoku {
 
     class SudokuFieldGroup;
 
+    namespace algorithm {
+        class SudokuFieldIterator;
+    }
+
     class SudokuField {
         friend void initialize_sudoku_field_group(unsigned short, unsigned short, unsigned short, Sudoku &, SudokuField*);
+        friend class algorithm::SudokuFieldIterator;
 
     private:
         unsigned const int m_id;
         std::vector<unsigned short> m_options;
         unsigned short m_value{0};
-        std::array<SudokuFieldGroup, 3> m_sudoku_field_groups;
+        std::array<SudokuFieldGroup*, 3> m_sudoku_field_groups;
 
     public:
         explicit SudokuField(unsigned int, unsigned short) noexcept;
@@ -36,15 +41,15 @@ namespace sudoku {
 
         void set_value(unsigned short);
         void remove_value() noexcept;
-        void remove_number_option(unsigned short) noexcept;
-        void add_number_option(unsigned short) noexcept;
-        [[nodiscard]] bool number_is_possible(unsigned short) const noexcept;
+        [[nodiscard]] bool remove_number_option(unsigned short) noexcept;
+        [[nodiscard]] bool add_number_option(unsigned short) noexcept;
+        [[nodiscard]] bool has_number_option(unsigned short) const noexcept;
         [[nodiscard]] bool has_value() const noexcept;
         [[nodiscard]] unsigned int id() const noexcept;
         [[nodiscard]] unsigned short option_count() const noexcept;
         [[nodiscard]] unsigned short value() const;
-        [[nodiscard]] std::array<SudokuFieldGroup, 3>::const_iterator begin() const noexcept;
-        [[nodiscard]] std::array<SudokuFieldGroup, 3>::const_iterator end() const noexcept;
+        [[nodiscard]] std::array<SudokuFieldGroup*, 3>::const_iterator begin() const noexcept;
+        [[nodiscard]] std::array<SudokuFieldGroup*, 3>::const_iterator end() const noexcept;
 
     };
 

@@ -5,15 +5,28 @@
 #include "../hdr/Sudoku.h"
 #include "../hdr/SudokuField.h"
 #include "../hdr/algorithm/SudokuFieldSorter.h"
+#include "../hdr/algorithm/SolvingOperation.h"
+#include "../hdr/algorithm/SudokuFieldIterator.h"
 #include <iostream>
+#include <memory>
+#include <stack>
 
 sudoku::Sudoku::Sudoku(unsigned short size) noexcept: m_size{size} {
     auto const max = m_size * m_size;
 
+    for (unsigned int i = 0; i < m_size; ++i) {
+        m_row_sudoku_field_groups[i] = std::make_unique<SudokuFieldGroup>();
+        m_column_sudoku_field_groups[i] = std::make_unique<SudokuFieldGroup>();
+        m_box_sudoku_field_groups[i] = std::make_unique<SudokuFieldGroup>();
+    }
+
     for (unsigned int i = 0; i < max; ++i) {
         auto const row = static_cast<unsigned int>(std::floor(i / m_size));
         auto const column = i % m_size;
-        auto const box = column + (static_cast<unsigned short>(std::sqrt(m_size)) * row);
+        auto const boxes_per_column_and_per_row{static_cast<unsigned short>(std::sqrt(m_size))};
+        auto const box_column_index{static_cast<unsigned int>(std::floor(column / boxes_per_column_and_per_row))};
+        auto const box_row_index{static_cast<unsigned int>(std::floor(row / boxes_per_column_and_per_row))};
+        auto const box = box_column_index + (boxes_per_column_and_per_row * box_row_index);
 
         auto sudoku_field_ptr = new SudokuField{i, m_size};
         add_sudoku_field(sudoku_field_ptr);
@@ -30,6 +43,8 @@ sudoku::Sudoku::~Sudoku() {
     }
 }
 
+sudoku::SudokuField* sudoku::Sudoku::operator[](unsigned int id) { return m_sorter.operator[](id); }
+
 void sudoku::Sudoku::add_sudoku_field(sudoku::SudokuField *sudoku_field_ptr) noexcept {
     SudokuField* old_sudoku_field_ptr{m_sorter[sudoku_field_ptr->id()]};
     if (old_sudoku_field_ptr != nullptr) {
@@ -45,14 +60,14 @@ void sudoku::initialize_sudoku_field_group(unsigned short row, unsigned short co
                                            Sudoku &sudoku, SudokuField* sudoku_field_ptr) {
     short calls = 0;
 
-    auto init = [&calls, &sudoku_field_ptr](SudokuFieldGroup &sudoku_field_group) {
-        sudoku_field_group.m_fields.push_back(sudoku_field_ptr);
-        sudoku_field_ptr->m_sudoku_field_groups[calls++] = sudoku_field_group;
+    auto init = [&calls, &sudoku_field_ptr](SudokuFieldGroup* sudoku_field_group_ptr) {
+        sudoku_field_group_ptr->m_fields.push_back(sudoku_field_ptr);
+        sudoku_field_ptr->m_sudoku_field_groups[calls++] = sudoku_field_group_ptr;
     };
 
-    init(sudoku.m_row_sudoku_field_groups[row]);
-    init(sudoku.m_column_sudoku_field_groups[column]);
-    init(sudoku.m_box_sudoku_field_groups[box]);
+    init(sudoku.m_row_sudoku_field_groups[row].get());
+    init(sudoku.m_column_sudoku_field_groups[column].get());
+    init(sudoku.m_box_sudoku_field_groups[box].get());
 }
 
 std::vector<sudoku::SudokuField*>::const_iterator sudoku::Sudoku::begin() const noexcept {
@@ -113,4 +128,95 @@ std::ostream& operator<<(std::ostream& ostream, sudoku::Sudoku &sudoku) {
 
 
     return ostream;
+}
+
+void sudoku::solve_sudoku(sudoku::Sudoku &sudoku) {
+    using namespace algorithm;
+    SudokuFieldSorter &sorter{sudoku.m_sorter};
+    std::map<SudokuField*, SudokuFieldIterator> iterators;
+    std::stack<SolvingOperation> operations;
+
+    std::for_each(sorter.begin(), sorter.end(), [&sorter](SudokuField* sudoku_field_ptr) {
+       sorter.update(sudoku_field_ptr);
+    });
+    sorter.flush();
+
+    auto current_sudoku_field_ptr{sorter.first()};
+
+    auto const get_iterator{
+        [&iterators](SudokuField *sudoku_field_ptr) {
+            if (!iterators.contains(sudoku_field_ptr)) {
+                SudokuFieldIterator iterator{sudoku_field_ptr};
+                iterators.insert(std::make_pair(sudoku_field_ptr, std::move(iterator)));
+            }
+
+            return &iterators.find(sudoku_field_ptr)->second;
+        }
+    };
+
+    auto const solve{
+        [&get_iterator, &current_sudoku_field_ptr, &sorter, &sudoku, &operations]() {
+            while (!sorter.no_fields_without_value()) {
+                if (current_sudoku_field_ptr->option_count() <= 0) {
+                    return false;
+                }
+
+                SudokuFieldIterator* iterator_ptr{get_iterator(current_sudoku_field_ptr)};
+
+                if (iterator_ptr->has_next()) {
+                    SolvingOperation solving_operation{current_sudoku_field_ptr, iterator_ptr->next()};
+                    solving_operation.perform(sudoku);
+                    operations.push(std::move(solving_operation));
+                }
+                else return false;
+
+                current_sudoku_field_ptr = sorter.first();
+            }
+
+            return true;
+        }
+    };
+
+    auto const fallback{
+        [&get_iterator, &current_sudoku_field_ptr, &sudoku, &operations]() {
+
+            SolvingOperation* last_operation_ptr{&operations.top()};
+            SudokuFieldIterator* last_iterator_ptr{get_iterator(last_operation_ptr->sudoku_field())};
+
+            while (!last_iterator_ptr->has_next()) {
+                last_operation_ptr->rollback(sudoku);
+                last_iterator_ptr->reset();
+
+                operations.pop();
+
+                if (operations.empty()) {
+                    current_sudoku_field_ptr = last_operation_ptr->sudoku_field();
+                    return;
+                }
+
+                last_operation_ptr = &operations.top();
+                last_iterator_ptr = get_iterator(last_operation_ptr->sudoku_field());
+            }
+
+            last_operation_ptr->rollback(sudoku);
+            operations.pop();
+
+            current_sudoku_field_ptr = last_operation_ptr->sudoku_field();
+        }
+    };
+
+    while (!solve()) {
+        try {
+            fallback();
+        }
+        catch (std::invalid_argument &invalid_argument){
+            break;
+        }
+    }
+}
+
+void sudoku::initialize_fixed_sudoku_field_value(sudoku::Sudoku &sudoku, sudoku::SudokuField *sudoku_field_ptr, unsigned short value) {
+    if (sudoku_field_ptr == nullptr) throw std::invalid_argument("No sudoku field given.");
+    sudoku::algorithm::SolvingOperation operation{sudoku_field_ptr, value};
+    operation.perform(sudoku);
 }
