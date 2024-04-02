@@ -154,6 +154,8 @@ void sudoku::solve_sudoku(sudoku::Sudoku &sudoku) {
         }
     };
 
+    // ab hier beginnt der eingentliche algo
+
     auto const solve{
         [&get_iterator, &current_sudoku_field_ptr, &sorter, &sudoku, &operations]() {
             while (!sorter.no_fields_without_value()) {
