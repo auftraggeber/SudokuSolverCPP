@@ -86,3 +86,22 @@ std::array<sudoku::SudokuFieldGroup*, 3>::const_iterator sudoku::SudokuField::en
     return m_sudoku_field_groups.end();
 }
 
+void sudoku::initialize_sudoku_fields_sudoku_field_groups(unsigned short s1, unsigned short s2, unsigned short s3,
+                                                          Sudoku &sudoku, SudokuField* sudoku_field_ptr) {
+    short calls = 0;
+
+    auto init = [&calls, &sudoku_field_ptr](SudokuFieldGroup* sudoku_field_group_ptr) {
+        sudoku_field_group_ptr->m_fields.push_back(sudoku_field_ptr);
+        sudoku_field_ptr->m_sudoku_field_groups[calls++] = sudoku_field_group_ptr;
+    };
+
+    init(sudoku.m_row_sudoku_field_groups[s1].get());
+    init(sudoku.m_column_sudoku_field_groups[s2].get());
+    init(sudoku.m_box_sudoku_field_groups[s3].get());
+}
+
+void sudoku::initialize_fixed_sudoku_field_value(sudoku::Sudoku &sudoku, sudoku::SudokuField *sudoku_field_ptr, unsigned short value) {
+    if (sudoku_field_ptr == nullptr) throw std::invalid_argument("No sudoku field given.");
+    sudoku::algorithm::SolvingOperation operation{sudoku_field_ptr, value};
+    operation.perform(sudoku);
+}

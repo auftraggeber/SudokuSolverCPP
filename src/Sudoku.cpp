@@ -31,7 +31,7 @@ sudoku::Sudoku::Sudoku(unsigned short size) noexcept: m_size{size} {
         auto sudoku_field_ptr = new SudokuField{i, m_size};
         add_sudoku_field(sudoku_field_ptr);
 
-        initialize_sudoku_field_group(row, column, box, *this, sudoku_field_ptr);
+        initialize_sudoku_fields_sudoku_field_groups(row, column, box, *this, sudoku_field_ptr);
     }
 }
 
@@ -56,19 +56,7 @@ void sudoku::Sudoku::add_sudoku_field(sudoku::SudokuField *sudoku_field_ptr) noe
 
 unsigned short sudoku::Sudoku::size() const noexcept { return m_size; }
 
-void sudoku::initialize_sudoku_field_group(unsigned short row, unsigned short column, unsigned short box,
-                                           Sudoku &sudoku, SudokuField* sudoku_field_ptr) {
-    short calls = 0;
 
-    auto init = [&calls, &sudoku_field_ptr](SudokuFieldGroup* sudoku_field_group_ptr) {
-        sudoku_field_group_ptr->m_fields.push_back(sudoku_field_ptr);
-        sudoku_field_ptr->m_sudoku_field_groups[calls++] = sudoku_field_group_ptr;
-    };
-
-    init(sudoku.m_row_sudoku_field_groups[row].get());
-    init(sudoku.m_column_sudoku_field_groups[column].get());
-    init(sudoku.m_box_sudoku_field_groups[box].get());
-}
 
 std::vector<sudoku::SudokuField*>::const_iterator sudoku::Sudoku::begin() const noexcept {
     return m_sorter.begin();
@@ -217,8 +205,3 @@ void sudoku::solve_sudoku(sudoku::Sudoku &sudoku) {
     }
 }
 
-void sudoku::initialize_fixed_sudoku_field_value(sudoku::Sudoku &sudoku, sudoku::SudokuField *sudoku_field_ptr, unsigned short value) {
-    if (sudoku_field_ptr == nullptr) throw std::invalid_argument("No sudoku field given.");
-    sudoku::algorithm::SolvingOperation operation{sudoku_field_ptr, value};
-    operation.perform(sudoku);
-}

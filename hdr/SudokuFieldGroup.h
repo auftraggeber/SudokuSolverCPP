@@ -13,7 +13,7 @@ namespace sudoku {
     class SudokuField;
 
     class SudokuFieldGroup {
-        friend void initialize_sudoku_field_group(unsigned short, unsigned short, unsigned short, Sudoku &, SudokuField*);
+        friend void initialize_sudoku_fields_sudoku_field_groups(unsigned short, unsigned short, unsigned short, Sudoku &, SudokuField*);
 
     private:
         std::vector<SudokuField*> m_fields;
